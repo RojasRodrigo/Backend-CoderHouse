@@ -1,184 +1,145 @@
-const fs = require("fs");
+
+import { promises as fs } from "fs";
+
+const path = "./productos.json";
+
 
 class ProductManager {
-  constructor(path) {
-    this.path = path;
-    this.products = [];
-    this.id = 1;
-  }
+    constructor() { }
 
-  async addProducts({ title, description, price, thumbnail, code, stock, id }) {
-    id = this.id;
-    const verificarCode = this.products.some((product) => {
-      return product.code === code;
-    });
-    if (verificarCode) {
-      console.log("El valor de code ya se encuentra asignado a otro producto");
-    } else if (
-      title != "" &&
-      description != "" &&
-      price != "" &&
-      thumbnail != "" &&
-      stock != "" &&
-      title != undefined &&
-      description != undefined &&
-      price != undefined &&
-      thumbnail != undefined &&
-      stock != undefined &&
-      code != "" &&
-      code != undefined
-    ) {
-      try {
-        console.log("producto cargado correctamente");
-        this.products.push({
-          title,
-          description,
-          price,
-          thumbnail,
-          code,
-          stock,
-          id,
-        });
+    //1) Método getProducts: consulto TODOS los productos en mi archivo json
+    async getProducts() {
 
-        this.id = this.id + 1;
-        await fs.promises.writeFile(this.path, JSON.stringify(this.products));
-      } catch (error) {
-        console.log("Este es el error de la promesa escrituraAsync", error);
-      }
-    } else {
-      console.log("Todos los parametros son requeridos");
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        console.log(prods);
     }
-  }
 
-  async getProducts() {
-    try {
-      this.products = JSON.parse(await fs.promises.readFile(this.path, "utf-8")
-      );
-      console.log(this.products)
-    } catch (error) {
-      console.log(error);
+    async getProductById(id) {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const producto = prods.find(prod => prod.id === id);
+
+        if (producto) {
+            console.log(producto);
+        } else {
+            console.log("Producto no encontrado");
+        }
     }
-  }
 
-  getProductById = async (id) => {
-    this.products = JSON.parse(await fs.promises.readFile(this.path, "utf-8"));
-    const resultadoId = this.products.find((e) => e.id === id);
-    if (resultadoId) {
-      return console.log(resultadoId);
-    } else {
-      return console.log("Not found");
+    async addProduct(product) {
+
+        if (
+            !product.title ||
+            !product.description ||
+            !product.price ||
+            !product.code ||
+            !product.stock ||
+            !product.thumbnail
+        ) {
+            console.log("Todos los campos son obligatorios");
+            return;
+        }
+
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+
+        const prodId = prods.find(prod => prod.id === product.id);
+
+        const prodCode = prods.find(prod => prod.code === product.code);
+
+
+        if (prodId || prodCode) {
+            console.log("Ya existe un producto con este id/código");
+        } else {
+            //Si no existe lo pusheo a ese array
+            prods.push(product);
+
+            await fs.writeFile(path, JSON.stringify(prods));
+        }
     }
-  };
 
+    async updateProduct(id, product) {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const indice = prods.findIndex(prod => prod.id === id);
 
-  updateProduct = async (id, data) =>{
-    try {
-      let productoAActualizar = await this.getProductById(id)
-      let productoIndex = this.products.findIndex(e => e.id === id);
-		  this.products[productoIndex] = { ...productoAActualizar, ...data, id:id};
-		  await fs.promises.writeFile(this.path, JSON.stringify(this.products));
-      console.log("Producto editado correctamente")
-    } catch (error) {
-      console.log("🚀 ~ file: RojasRodrigo-Entregable_2.js:80 ~ ProductManager ~ updateProduct= ~ error", error)
-      
+        if (indice != -1) {
+            prods[indice].title = product.title;
+            prods[indice].description = product.description;
+            prods[indice].price = product.price;
+            prods[indice].code = product.code;
+            prods[indice].stock = product.stock;
+            prods[indice].thumbnail = product.thumbnail;
+
+            //Modifico el json con el nuevo contenido
+            await fs.writeFile(path, JSON.stringify(prods));
+        } else {
+            console.log("Producto no encontrado");
+        }
     }
-  }
 
+    //5) Método deleteProduct: elimino un producto, utilizo su id como parámetro
+    async deleteProduct(id) {
+        const prods = JSON.parse(await fs.readFile(path, "utf-8"));
+        const producto = prods.find(prod => prod.id === id);
 
-  deleteProduct = async(id) =>{
-    try{
-    this.products = JSON.parse(await fs.promises.readFile(this.path, 'utf-8'));
-		this.products = this.products.filter(prod => prod.id !== id);
-    await fs.promises.writeFile(this.path, JSON.stringify(this.products));
-  }catch(error){
-  console.log("🚀 ~ file: ProductManager_PerezBruno.js:94 ~ ProductManager ~ deleteProduct ~ error:", error)
-  }
-}}
-
-
-
-
-
-
-//****************Proceso de Testing*****************
+        //Si encuentra al producto que lo borre del JSON, sino poneme producto no encontrado
+        if (producto) {
+            await fs.writeFile(path, JSON.stringify(prods.filter(prod => prod.id != id)));
+        } else {
+            console.log("Producto no encontrado");
+        }
+    }
+}
 
 
 
 
-
-//Se creará una instancia de la clase “ProductManager”
-
-//const adminProduct = new ProductManager("BaseDeDatos.json");
-
-// Se llamará “getProducts” recién creada la instancia, debe devolver un arreglo vacío []
-
-//adminProduct.getProducts()// no existe el archivo aún
-
-/*
-Se llamará al método “addProduct” con los campos:
-title: “producto prueba”
-description:”Este es un producto prueba”
-price:200,
-thumbnail:”Sin imagen”
-code:”abc123”,
-stock:25
- */
-
-//  adminProduct.addProducts({
-//   title: "producto prueba",
-//   description: "Este es un producto prueba",
-//   price: 200,
-//   thumbnail: "Sin imagen",
-//   code: "abc1234",
-//   stock: 25,
-// });
+//Creo la clase de los productos y autoincremento el id
+class Product {
+    constructor(title, description, price, code, stock, thumbnail) {
+        this.title = title
+        this.description = description
+        this.price = price
+        this.code = code
+        this.stock = stock
+        this.thumbnail = thumbnail
+        this.id = Product.incrementarId()
+    }
 
 
-//  adminProduct.addProducts({
-//   title: "producto dos",
-//   description: "Este es un producto prueba",
-//   price: 200,
-//   thumbnail: "Sin imagen",
-//   code: "abc789",
-//   stock: 25,
-// });
+    static incrementarId() {
+        //Si el contador de id existe, la aumento en 1. Sino la creo con id 1
+        if (this.idIncrement) {
+            this.idIncrement++;
+        } else {
+            this.idIncrement = 1;
+        }
+        return this.idIncrement
+    }
+}
 
-//  adminProduct.addProducts({
-//   title: "producto tres",
-//   description: "Este es un producto prueba",
-//   price: 200,
-//   thumbnail: "Sin imagen",
-//   code: "abcdef",
-//   stock: 25,
-// });
-
-// //Se llamará el método “getProducts” nuevamente, esta vez debe aparecer el producto recién agregado
-
-//adminProduct.getProducts()
-
-// se llamará al método "getProducById()" y se corroborará de que devuelva el producto con el id especificado, en caso de no existir, debe arrojar un error.
-
-//adminProduct.getProductById(1)
+//Creo los productos
+const producto1 = new Product("Producto 1", "Este es el producto 1", 300, "PROD001", 10, "ejemploImagen1.jpg")
+const producto2 = new Product("Producto 2", "Este es el producto 2", 600, "PROD002", 30, "ejemploImagen2.jpg")
+const producto3 = new Product("Producto 3", "Este es el producto 3", 400, "PROD003", 15, "ejemploImagen3.jpg")
 
 
+const productManager = new ProductManager();
 
-//adminProduct.getProductById(3)
+async function metodos() {
+ 
+    await productManager.getProducts();
 
+    await productManager.getProductById(2);
 
- // Se llamará al método “updateProduct()” y se intentará cambiar el campo de algún producto, se evaluará que no se elimine el id y que se haya hecho la actualización
+    for (let x of [producto1, producto2, producto3]) {
+        await productManager.addProduct(x);
+    }
 
-// const porductoActualizado = {
-//   title: "producto Actualizado",
-//   description: "ACTUALIZACION",
-//   price: 200,
-//   thumbnail: "Sin imagen",
-//   code: "abc1234",
-//   stock: 25,
-// }
+    //4) Actualizo un producto gracias al método updateProduct. Solamente modifico el title
+    await productManager.updateProduct(2, { "title": "Producto title cambiado", "description": "Este es el producto 2", "price": 600, "code": "PROD002", "stock": 30, "thumbnail": "ejemploImagen2.jpg" });
 
-//adminProduct.updateProduct(3, porductoActualizado)
+    //5) Elimino un producto
+    await productManager.deleteProduct(3);
+}
 
-
-// se llamará al método "deleteProduct", se evaluara que realmente se elimine el producto o que arroje un error en caso de no existir.
-
-//adminProduct.deleteProduct(1)
+//Ejecuto
+metodos();
