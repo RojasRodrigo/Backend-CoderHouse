@@ -104,19 +104,25 @@ class CartsManager{
 
       async insertArray(cartId, arrayProducts){
         try {            
-            const arr = arrayProducts
-            const prod = await this.getProductInCartById(cartId)
-            console.log("🚀 ~ file: cartsManager.js:109 ~ CartsManager ~ insertArray ~ prod:", prod)
-            if(prod){
-                Object.keys(prod.products).forEach(key =>{
-                    console.log(key)
-                })
-                // let idProd = prod.
-                // arr.forEach(e => {
-                //     console.log(e.product)
-                // });
+            const cartProducts = await cartsModel.findById(cartId)//busco el carrito
+            if(cartProducts){
+                for (let prod of arrayProducts) {//verifico si existen productos repetidos
+                    const index = cartProducts.products.findIndex(p => p.product._id == prod.product);
+                    console.log("🚀 ~ file: cartsManager.js:111 ~ CartsManager ~ insertArray ~ index:", index)
+                if (index !== -1) {
+                    cartProducts.products[index].quantity = prod.quantity;
+                } else {
+                    const exists = await this.productsManager.getProductById(prod.product);
+                    if (exists){
+                        cartProducts.products.push(prod);
+                    }else {
+                   return ({message: 'product not found'})
+                    }
+            }}
+            }else{
+                return ({message: 'cart not found', })
             }
-            //console.log("🚀 ~ file: cartsManager.js:109 ~ CartsManager ~ insertArray ~ arr:", arr)
+            return await cartProducts.save()
         } catch (error) {
             console.log("🚀 ~ file: cartsManager.js:110 ~ CartsManager ~ insertArray ~ error:", error)
             

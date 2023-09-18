@@ -61,7 +61,7 @@ class cartsRoutes {
         try {
           const addProduct =  await this.cartsManager.addProductInCartById(cartId, productId, quantity);
           res.status(200).send({
-                            message: 'the cart was uploaded successfully',
+                            message: 'updating cart',
                              product: addProduct
                         })
         } catch (error) {
